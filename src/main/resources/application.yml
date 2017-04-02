@@ -1,0 +1,12 @@
+spring.profiles.active: local
+
+spring:
+    profiles: online
+#ftp主机ip
+ftp.host: 10.10.10.10
+#ftp服务端口
+ftp.port: 8991
+#ftp服务登录密码
+ftp.password: 123456
+#ftp登录用户名
+ftp.userName: admin
