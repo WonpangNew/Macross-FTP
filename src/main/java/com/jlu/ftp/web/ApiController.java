@@ -6,9 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import java.io.File;
-import java.io.InputStream;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Created by niuwanpeng on 17/4/2.
@@ -23,15 +21,20 @@ public class ApiController {
     @ResponseBody
     public String uploadFile(@RequestParam("remoteDir") String remoteDir,
                              @RequestParam("remoteFileName") String remoteFileName,
-                             @RequestParam("inputStream") InputStream inputStream) {
-        return FTPUtils.uploadFileByInputStream(remoteDir, remoteFileName, inputStream);
+                             @RequestParam("file") MultipartFile file) {
+        return FTPUtils.uploadFileByInputStream(remoteDir, remoteFileName, file);
     }
 
-    @RequestMapping(value = "/download", method = RequestMethod.GET)
+    /**
+     * 返回下载产出的url
+     * @param remoteDir
+     * @param remoteFileName
+     * @return
+     */
+    @RequestMapping(value = "/downloadUrl", method = RequestMethod.GET)
     @ResponseBody
     public String downloadFile(@RequestParam("remoteDir") String remoteDir,
-                             @RequestParam("remoteFileName") String remoteFileName,
-                             @RequestParam("localFile") File localFile) {
-        return FTPUtils.downFile(remoteDir, remoteFileName, localFile);
+                             @RequestParam("remoteFileName") String remoteFileName) {
+        return FTPUtils.getFileHTTPUrlByFileName(remoteDir, remoteFileName);
     }
 }

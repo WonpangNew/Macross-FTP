@@ -9,6 +9,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.util.HashMap;
@@ -31,54 +32,42 @@ public class FTPUtils {
      * 以流的方式上传文件
      * @param remoteDir 远程目录
      * @param remoteFileName 文件名
-     * @param inputStream 文件流
+     * @param file
      * @return
      */
-    public static String uploadFileByInputStream(String remoteDir, String remoteFileName, InputStream inputStream) {
+    public static String uploadFileByInputStream(String remoteDir, String remoteFileName, MultipartFile file) {
         FTPClient ftpClient = null;
         Map<String, Object> response = new HashMap<String, Object>();
         response.put(STATUS, FTPStatus.FAIL);
-        if (!StringUtils.isBlank(remoteFileName) && null != inputStream) {
-            try {
-                ftpClient = FTPConfig.getFTPClient();
-                String subDir = getSubDirByFileName(remoteDir, remoteFileName);
-                mkAndcdDir(ftpClient, subDir);
-                boolean result = ftpClient.storeFile(remoteFileName, inputStream);
-                if(!result) {
-                    response.put(ERR_MSG, "FTP fail to uploadFileFromInputStream.");
-                    LOGGER.error("FTP fail to uploadFileFromInputStream.");
-                } else {
-                    response.put(STATUS, FTPStatus.SUCCESS);
-                    response.put(DOWN_URL, getFileHTTPUrlByFileName(remoteDir, remoteFileName));
+        try {
+            InputStream inputStream = file.getInputStream();
+            if (!StringUtils.isBlank(remoteFileName) && null != inputStream) {
+                try {
+                    ftpClient = FTPConfig.getFTPClient();
+                    String subDir = getSubDirByFileName(remoteDir, remoteFileName);
+                    mkAndcdDir(ftpClient, subDir);
+                    boolean result = ftpClient.storeFile(remoteFileName, inputStream);
+                    if(!result) {
+                        response.put(ERR_MSG, "FTP fail to uploadFileFromInputStream.");
+                        LOGGER.error("FTP fail to uploadFileFromInputStream.");
+                    } else {
+                        response.put(STATUS, FTPStatus.SUCCESS);
+                        response.put(DOWN_URL, getFileHTTPUrlByFileName(remoteDir, remoteFileName));
+                    }
+                } catch (IOException e) {
+                    response.put(ERR_MSG, "ftp uploadFileFromInputStream error.");
+                    LOGGER.error("ftp uploadFileFromInputStream error.", e);
+                } finally {
+                    logout(ftpClient, inputStream);
                 }
-            } catch (IOException e) {
-                response.put(ERR_MSG, "ftp uploadFileFromInputStream error.");
-                LOGGER.error("ftp uploadFileFromInputStream error.", e);
-            } finally {
-                logout(ftpClient, inputStream);
+            } else {
+                response.put(ERR_MSG, "filename or inputStream must not be null or empty");
+                LOGGER.error("filename or inputStream must not be null or empty");
             }
-        } else {
-            response.put(ERR_MSG, "filename or inputStream must not be null or empty");
-            LOGGER.error("filename or inputStream must not be null or empty");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return GSON.toJson(response);
-    }
-
-    /**
-     * 直接以文件的方式上传
-     * @param remoteDir 远程目录
-     * @param remoteFileName 文件名
-     * @param localFile 待上传文件
-     * @return
-     */
-    public static String uploadLocalFile(String remoteDir, String remoteFileName, File localFile) {
-        FileInputStream in = null;
-        try {
-            in = new FileInputStream(localFile);
-        } catch (FileNotFoundException e) {
-            LOGGER.error("FTP not found.", e);
-        }
-        return uploadFileByInputStream(remoteDir, remoteFileName, in);
     }
 
     /**
@@ -121,7 +110,7 @@ public class FTPUtils {
      * @param fileName
      * @return
      */
-    private static String getFileHTTPUrlByFileName(String remoteDir, String fileName) {
+    public static String getFileHTTPUrlByFileName(String remoteDir, String fileName) {
         if(StringUtils.isBlank(fileName)) {
             return null;
         } else {

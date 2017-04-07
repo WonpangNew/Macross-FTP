@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Run Release Service !
+ * Run FTP Service !
  */
 @RestController
 @EnableAutoConfiguration

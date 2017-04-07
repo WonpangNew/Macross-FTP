@@ -4,7 +4,7 @@
   <groupId>Macross</groupId>
   <artifactId>FTP</artifactId>
   <packaging>war</packaging>
-  <version>1.0-SNAPSHecho '.idea' >> .gitignoreOT</version>
+  <version>1.0-SNAPSHOT</version>
   <name>FTP Maven Webapp</name>
   <url>http://maven.apache.org</url>
 
