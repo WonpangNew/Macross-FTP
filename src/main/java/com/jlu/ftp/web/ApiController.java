@@ -94,6 +94,7 @@ public class ApiController {
             LOGGER.error("Copying file is fail! sourceDir:{}, targetDir:{}, sourceFileName:{}",
                     sourceDir, targetDir, sourceFileName, e);
         }
+        LOGGER.info("Copy file params:{}", result);
         return result;
     }
 }

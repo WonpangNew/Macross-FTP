@@ -26,6 +26,7 @@ public class FTPUtils {
     private static final String STATUS = "STATUS";
     private static final String ERR_MSG = "ERR_MSG";
     private static final String DOWN_URL = "DOWN_URL";
+    private static final String DOWNLOAD_API = "http://localhost:8999/ftp/api/download?remoteDir=%s&remoteFileName=%s";
     private static final Logger LOGGER = LoggerFactory.getLogger(FTPUtils.class);
     private static final Gson GSON = new Gson();
 
@@ -114,6 +115,9 @@ public class FTPUtils {
      */
     public static String copyFile(String sourceDir, String targetDir, String sourceFileName) throws Exception{
         Map<String, Object> response = new HashMap<String, Object>();
+        Map<String, String> downParams = new HashMap<String, String>();
+        downParams.put("remoteDir", targetDir);
+        downParams.put("remoteFileName", sourceFileName);
         response.put(STATUS, FTPStatus.FAIL);
         FTPClient ftpClient = null;
         ByteArrayInputStream in = null;
@@ -125,6 +129,8 @@ public class FTPUtils {
             ftpClient.setBufferSize(1024 * 2);
             ftpClient.changeWorkingDirectory(sourceDir);
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+            LOGGER.info("Starting Copy file:{} from sourceDir:{} to targetDir:{}",
+                    sourceFileName, sourceDir, targetDir);
             boolean result = ftpClient.retrieveFile(sourceFileName, fos);
             if (result) {
                 in = new ByteArrayInputStream(fos.toByteArray());
@@ -134,10 +140,12 @@ public class FTPUtils {
                     result = ftpClient.storeFile(sourceFileName, in);
                     if (result) {
                         response.put(STATUS, FTPStatus.SUCCESS);
+                        response.put(DOWN_URL, GSON.toJson(downParams));
                         LOGGER.info("Copy file:{} is successful from sourceDir:{} to targetDir:{}",
                                 sourceFileName, sourceDir, targetDir);
                     } else {
                         response.put(ERR_MSG, "Can't copy file to targetDir!");
+                        response.put(DOWN_URL, "");
                         LOGGER.error("Can't copy file:{} to targetDir:{}", sourceFileName, targetDir);
                     }
                 }
