@@ -75,6 +75,13 @@ public class ApiController {
         return result;
     }
 
+    /**
+     * 复制产出到指定目录
+     * @param sourceDir
+     * @param targetDir
+     * @param sourceFileName
+     * @return
+     */
     @RequestMapping(value = "/copy", method = RequestMethod.GET)
     @ResponseBody
     public String copyFileToDir(@RequestParam("sourceDir") String sourceDir,

@@ -3,6 +3,11 @@ spring.profiles.active: local
 spring:
     profiles: local
 
+    http:
+         multipart:
+              max-file-size: 30MB
+              max-request-size: 30MB
+
 #ftp主机ip
 ftp.host: 139.129.35.200
 

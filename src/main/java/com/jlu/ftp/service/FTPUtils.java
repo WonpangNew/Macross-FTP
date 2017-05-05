@@ -38,8 +38,7 @@ public class FTPUtils {
      */
     public static String uploadFileByInputStream(String remoteDir, String remoteFileName, MultipartFile file) {
         FTPClient ftpClient = null;
-        Map<String, Object> response = new HashMap<String, Object>();
-        response.put(STATUS, FTPStatus.FAIL);
+        String response = "FAIL";
         try {
             InputStream inputStream = file.getInputStream();
             if (!StringUtils.isBlank(remoteFileName) && null != inputStream) {
@@ -50,27 +49,23 @@ public class FTPUtils {
                     LOGGER.info("Starting upload file:{}", remoteDir + "/" + remoteFileName);
                     boolean result = ftpClient.storeFile(remoteFileName, inputStream);
                     if(!result) {
-                        response.put(ERR_MSG, "FTP fail to uploadFileFromInputStream.");
                         LOGGER.error("FTP fail to uploadFileFromInputStream.");
                     } else {
-                        response.put(STATUS, FTPStatus.SUCCESS);
-                        response.put(DOWN_URL, getFileHTTPUrlByFileName(remoteDir, remoteFileName));
+                        response = "OK";
                     }
                 } catch (IOException e) {
-                    response.put(ERR_MSG, "ftp uploadFileFromInputStream error.");
                     LOGGER.error("ftp uploadFileFromInputStream error.", e);
                 } finally {
                     LOGGER.info("Ending upload file:{}", remoteDir + "/" + remoteFileName);
                     logout(ftpClient, inputStream);
                 }
             } else {
-                response.put(ERR_MSG, "filename or inputStream must not be null or empty");
                 LOGGER.error("filename or inputStream must not be null or empty");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return GSON.toJson(response);
+        return response;
     }
 
     /**
@@ -118,10 +113,11 @@ public class FTPUtils {
      * @return
      */
     public static String copyFile(String sourceDir, String targetDir, String sourceFileName) throws Exception{
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put(STATUS, FTPStatus.FAIL);
         FTPClient ftpClient = null;
         ByteArrayInputStream in = null;
         ByteArrayOutputStream fos = new ByteArrayOutputStream();
-        String result = "FAIL";
         try {
             ftpClient = FTPConfig.getFTPClient();
             sourceDir = getSubDirByFileName(sourceDir, sourceFileName);
@@ -129,14 +125,25 @@ public class FTPUtils {
             ftpClient.setBufferSize(1024 * 2);
             ftpClient.changeWorkingDirectory(sourceDir);
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-            ftpClient.retrieveFile(sourceFileName, fos);
-            in = new ByteArrayInputStream(fos.toByteArray());
-            if (in != null) {
-                ftpClient.changeWorkingDirectory("/home/work");
-                mkAndcdDir(ftpClient, targetDir);
-                ftpClient.storeFile(sourceFileName, in);
-                result = "SUCC";
-                LOGGER.info("Copy file:{} is successful from sourceDir:{} to targetDir:{}", sourceFileName, sourceDir, targetDir);
+            boolean result = ftpClient.retrieveFile(sourceFileName, fos);
+            if (result) {
+                in = new ByteArrayInputStream(fos.toByteArray());
+                if (in != null) {
+                    ftpClient.changeWorkingDirectory("/home/work");
+                    mkAndcdDir(ftpClient, targetDir);
+                    result = ftpClient.storeFile(sourceFileName, in);
+                    if (result) {
+                        response.put(STATUS, FTPStatus.SUCCESS);
+                        LOGGER.info("Copy file:{} is successful from sourceDir:{} to targetDir:{}",
+                                sourceFileName, sourceDir, targetDir);
+                    } else {
+                        response.put(ERR_MSG, "Can't copy file to targetDir!");
+                        LOGGER.error("Can't copy file:{} to targetDir:{}", sourceFileName, targetDir);
+                    }
+                }
+            } else {
+                response.put(ERR_MSG, "Don't find sourceDir");
+                LOGGER.error("Don't find sourceDir:{}", sourceDir);
             }
         } finally {
             if (in != null) {
@@ -146,7 +153,7 @@ public class FTPUtils {
                 fos.close();
             }
         }
-        return result;
+        return GSON.toJson(response);
     }
 
     /**
@@ -177,16 +184,10 @@ public class FTPUtils {
         if(StringUtils.isBlank(fileName)) {
             return "";
         } else {
-            String httpHost = FTPConfig.getInstance().getFtpHost();
-            StringBuffer sb = new StringBuffer();
-            if(!httpHost.startsWith("http://")) {
-                sb.append("http://");
-            }
-            sb.append(httpHost);
-            sb.append("/").append(FTPConfig.getInstance().getFtpUserName());
-            String subDir = getSubDirByFileName(remoteDir, fileName);
-            sb.append("/").append(subDir);
-            sb.append("/").append(fileName);
+
+            StringBuffer sb = new StringBuffer("http://localhost:8999/ftp/api/download?");
+            sb.append("remoteDir=").append(remoteDir);
+            sb.append("&remoteFileName=").append(fileName);
             return sb.toString();
         }
     }
