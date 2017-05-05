@@ -115,9 +115,7 @@ public class FTPUtils {
      */
     public static String copyFile(String sourceDir, String targetDir, String sourceFileName) throws Exception{
         Map<String, Object> response = new HashMap<String, Object>();
-        Map<String, String> downParams = new HashMap<String, String>();
-        downParams.put("remoteDir", targetDir);
-        downParams.put("remoteFileName", sourceFileName);
+        String productPath = targetDir + "/" + sourceFileName;
         response.put(STATUS, FTPStatus.FAIL);
         FTPClient ftpClient = null;
         ByteArrayInputStream in = null;
@@ -140,7 +138,7 @@ public class FTPUtils {
                     result = ftpClient.storeFile(sourceFileName, in);
                     if (result) {
                         response.put(STATUS, FTPStatus.SUCCESS);
-                        response.put(DOWN_URL, GSON.toJson(downParams));
+                        response.put(DOWN_URL, productPath);
                         LOGGER.info("Copy file:{} is successful from sourceDir:{} to targetDir:{}",
                                 sourceFileName, sourceDir, targetDir);
                     } else {
